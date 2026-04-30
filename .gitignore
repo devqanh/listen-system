@@ -1,0 +1,33 @@
+# Audio files (760MB+ mp3, tải lại bằng crawler)
+public/audio/**/*.mp3
+public/audio/**/*.part
+
+# SQLite database (tạo lại bằng crawler)
+data/library.sqlite
+data/library.sqlite-wal
+data/library.sqlite-shm
+
+# HTML cache (tạo lại khi crawl)
+data/cache/*.html
+
+# API key (bảo mật)
+data/api.key
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+crawler_py/__pycache__/
+
+# Archive / backup
+*.zip
+*.tar.gz
+*.rar
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
