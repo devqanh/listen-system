@@ -351,6 +351,19 @@ button { font-family: inherit; }
     border-radius: 5px;
     text-decoration: line-through;
 }
+.tok-answer {
+    color: #ea580c;
+    background: #fff7ed;
+    padding: 0.1rem 0.5rem;
+    border-radius: 6px;
+    border: 2px solid #fb923c;
+    font-weight: 700;
+    animation: answer-flash 0.4s ease;
+}
+@keyframes answer-flash {
+    0%   { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
 
 #user-input {
     width: 100%;
