@@ -423,65 +423,46 @@
     }
 
     /**
-     * Đáp án: hiện từ đáp án TẠI CHỖ trên display (highlight đỏ), giữ nguyên 1.5s
-     * để user đọc, rồi mới advance sang từ kế tiếp.
-     * Word mode: 1 từ tại 1 thời điểm.
-     * Whole mode: hiện toàn bộ trên display, KHÔNG dump text vào result div.
+     * Đáp án = "peek" (gợi ý): hiện từ đáp án tại chỗ trên display 3 giây rồi ẩn lại.
+     * KHÔNG advance sang từ kế tiếp — user vẫn phải tự gõ đúng từ đó.
+     * Bấm nhiều lần → chỉ hiện lại cùng 1 từ (vì wordIdx không đổi).
      */
     function showAnswer() {
         if (state.phase !== PHASE.DICTATING) return;
-        if (state._revealTimer) return; // đang trong delay reveal, chờ
         const line = state.lines[state.cur];
 
         if (state.mode === 'word') {
             const target = line.wordsOnly[state.wordIdx];
             if (!target) return;
 
-            // Hiện từ đáp án TẠI CHỖ trên display (class "tok-answer")
-            state.revealed.add(`${state.cur}:${target.tokIdx}`);
-            renderDisplayWithAnswer(target.tokIdx, target.tok);
-            flashResult(`→ ${target.tok}`, 'fail');
-            input.value = '';
+            // Hiện từ đáp án tại chỗ blank (highlight cam) — 3 giây rồi ẩn lại
+            if (state._peekTimer) clearTimeout(state._peekTimer);
+            renderDisplayPeek(target.tokIdx, target.tok);
+            flashResult(`Gợi ý: "${target.tok}" — hãy gõ lại từ này`, 'fail');
+            input.focus();
 
-            // Delay 1.5s rồi advance
-            state._revealTimer = setTimeout(() => {
-                state._revealTimer = null;
-                state.wordIdx++;
-                if (state.wordIdx >= line.wordsOnly.length) {
-                    completeLine();
-                } else {
-                    renderDisplay();
-                    input.focus();
-                }
-            }, 1500);
+            state._peekTimer = setTimeout(() => {
+                state._peekTimer = null;
+                renderDisplay(); // ẩn lại thành [----](N)
+            }, 3000);
         } else {
-            // Whole mode: hiện tất cả trên display, không advance
+            // Whole mode: hiện toàn bộ trên display
             line.wordsOnly.forEach(x => state.revealed.add(`${state.cur}:${x.tokIdx}`));
             renderDisplay();
-            flashResult('Xem đáp án trên display ↑', 'fail');
+            flashResult('Xem đáp án trên display — hãy gõ lại cả câu', 'fail');
         }
     }
 
-    /** Render display với 1 từ đáp án highlight đỏ tại vị trí tokIdx. */
-    function renderDisplayWithAnswer(answerTokIdx, answerText) {
+    /** Render display với 1 từ peek (highlight cam) tại vị trí tokIdx, các từ khác giữ nguyên. */
+    function renderDisplayPeek(peekTokIdx, peekText) {
         const line = state.lines[state.cur];
-        const wordsOnly = line.wordsOnly;
-        const curTokIdx = wordsOnly[state.wordIdx]?.tokIdx ?? -2;
-
         const parts = line.words.map((tok, i) => {
             if (!isWord(tok)) return `<span class="tok tok-revealed">${escapeHtml(tok)}</span>`;
-            if (i === answerTokIdx) {
-                return `<span class="tok tok-answer">${escapeHtml(answerText)}</span>`;
+            if (i === peekTokIdx) {
+                return `<span class="tok tok-answer">${escapeHtml(peekText)}</span>`;
             }
-            if (state.mode === 'word') {
-                return `<span class="tok tok-revealed">${escapeHtml(tok)}</span>`;
-            } else {
-                const wasRevealed = state.revealed.has(`${state.cur}:${i}`);
-                if (wasRevealed) return `<span class="tok tok-revealed">${escapeHtml(tok)}</span>`;
-                return `<span class="tok tok-blank">${maskOf(tok)}</span>`;
-            }
+            return `<span class="tok tok-revealed">${escapeHtml(tok)}</span>`;
         });
-
         let buf = '';
         for (let i = 0; i < line.words.length; i++) {
             if (i > 0 && isWord(line.words[i])) buf += ' ';
