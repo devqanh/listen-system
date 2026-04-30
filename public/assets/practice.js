@@ -275,12 +275,13 @@
             const allDone = state.completed.size >= state.lines.length;
             let tip;
             if (allDone) {
-                tip = `<div class="phase-tip">🎉 Tuyệt vời! Đã hoàn thành tất cả ${state.lines.length} câu. Điểm: ${state.score}/${state.lines.length}</div>`;
+                tip = `<div class="phase-tip">🎉 Tuyệt vời! Hoàn thành ${state.lines.length}/${state.lines.length} câu.</div>`;
             } else if (isLast) {
-                tip = '<div class="phase-tip">Câu cuối xong. Còn một số câu chưa hoàn thành — dùng Transcript bên dưới để chọn.</div>';
+                tip = '<div class="phase-tip">Câu cuối xong. Dùng Transcript bên dưới để chọn câu chưa hoàn thành.</div>';
             } else {
                 tip = '<div class="phase-tip">✅ Hoàn thành! Nhấn <kbd>▶ Câu sau</kbd> để tiếp.</div>';
             }
+            tip += `<button class="retry-btn" data-action="retry">↺ Làm lại câu này</button>`;
             display.innerHTML = `<div class="full-line">${buf}</div>${tip}`;
             return;
         }
@@ -499,6 +500,32 @@
         }
         return merged;
     }
+
+    /* =========== Retry (làm lại câu đã completed) =========== */
+    function retryLine(i) {
+        state.completed.delete(i);
+        state.score = Math.max(0, state.score - 1);
+        state.wordIdx = 0;
+        // Xóa revealed hints cho câu này
+        for (const key of [...state.revealed]) {
+            if (key.startsWith(i + ':')) state.revealed.delete(key);
+        }
+        scoreEl.textContent = state.score;
+        state.phase = PHASE.IDLE;
+        renderDisplay();
+        renderProgressBar();
+        renderTranscriptMarks();
+        updateButtonLabels();
+        saveProgress();
+        flashResult('Đã reset câu — nhấn ▶ Phát để nghe lại.', '');
+    }
+
+    // Event delegation cho nút "Làm lại" bên trong display
+    display.addEventListener('click', e => {
+        if (e.target.closest('[data-action="retry"]')) {
+            retryLine(state.cur);
+        }
+    });
 
     /* =========== Wiring =========== */
     btnRelisten.addEventListener('click', relisten);
